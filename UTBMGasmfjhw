@@ -9790,5 +9790,5 @@ end
 buildWindow()
 
 if _auralWindow then
-	pcall(function() _auralWindow:Notify({ Title = "badminton.hub", Text = okGame and "Loaded" or "Game not found", Duration = 4 }) end)
+	pcall(function() _auralWindow:Notify({ Title = "Aural V2 UTBMG", Text = okGame and "Loaded" or "Game not found", Duration = 4 }) end)
 end
