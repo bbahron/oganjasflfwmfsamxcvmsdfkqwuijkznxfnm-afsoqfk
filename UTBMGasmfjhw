@@ -7178,7 +7178,7 @@ end
 return AuralV2
 end)()
 
--- badminton.hub — improved autoplay build
+-- Aural V2 — improved autoplay build
 -- commission for 279mental
 local env = getgenv()
 if env.BadmintonHub and env.BadmintonHub.Unload then pcall(env.BadmintonHub.Unload) end
@@ -8533,6 +8533,16 @@ function autoSwing.press(c, flight, plan, id, sw)
 			autoSwing.jump(c, plan, sw)
 		elseif c.now > beginAt + 0.1 then
 			S.noJumpFor = id
+			-- Jump window closed — degrade to a standing OH so we don't whiff.
+			-- Without this the bot arrives at the stand, does nothing, and watches the shuttle land.
+			kind = "OH"
+			plan.kind = "OH"
+			if (near and c.now >= pressAt) or veryLate then
+				sw.kind = "OH"
+				sw.lockedPlan = plan
+				G.fn.press(actionFor(c, "OH"))
+				sw.pressed, sw.pressedAt = true, c.now
+			end
 		end
 	elseif (near and c.now >= pressAt) or veryLate or (aimTimedOut and near) then
 		if kind == "FH" or kind == "BH" then
@@ -8713,7 +8723,10 @@ function autoSwing.run(c, flight, plan, id, dt)
 	elseif free and not sw.jumped then
 		autoSwing.press(c, flight, plan, id, sw)
 	end
-	if sw.pressed and not sw.released and not charging() and c.now - sw.pressedAt > 0.15 then
+	-- Never reset sw.pressed while a jump is in progress: charging() can momentarily return nil
+	-- during the game's internal jump state transition, which would trigger a double-press in
+	-- the air (sw.jumped + c.airborne re-press path) and corrupt the smash animation.
+	if sw.pressed and not sw.released and not charging() and c.now - sw.pressedAt > 0.15 and not sw.jumped then
 		sw.pressed = false
 		sw.refined, sw.refinedLate = nil, nil
 	end
@@ -9790,5 +9803,5 @@ end
 buildWindow()
 
 if _auralWindow then
-	pcall(function() _auralWindow:Notify({ Title = "Aural V2 UTBMG", Text = okGame and "Loaded" or "Game not found", Duration = 4 }) end)
+	pcall(function() _auralWindow:Notify({ Title = "Aural V2", Text = okGame and "Loaded" or "Game not found", Duration = 4 }) end)
 end
